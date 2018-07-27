@@ -133,3 +133,13 @@ def factor_tree(n):
         if n % i == 0:
             return Tree(i, [factor_tree(n//i)])
     return Tree(n)
+
+def stretch(s, repeat = 0):
+
+    if s != Link.empty:
+        for i in range(repeat):
+            s = Link(s.first, s)
+            s = s.rest
+        stretch(s.rest, repeat + 1)
+
+a = Link(3, Link(4, Link(5, Link(6))))
