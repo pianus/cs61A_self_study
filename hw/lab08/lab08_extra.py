@@ -26,16 +26,28 @@ class Keyboard:
 
     def __init__(self, *args):
         "*** YOUR CODE HERE ***"
+        self.buttons = {}
+        for i in List(*args):
+            self.buttons[i.pos] = i
 
     def press(self, info):
         """Takes in a position of the button pressed, and
         returns that button's output"""
         "*** YOUR CODE HERE ***"
+        assert info in self.buttons
+        self.buttons[info].pressed += 1
+        return self.buttons[info].key
 
     def typing(self, typing_input):
         """Takes in a list of positions of buttons pressed, and
         returns the total output"""
         "*** YOUR CODE HERE ***"
+        output = ''
+        for i in typing_input:
+            assert i in self.buttons
+            self.buttons[i].pressed += 1
+            output += self.buttons[i].key
+        return output
 
 class Button:
     def __init__(self, pos, key):
@@ -75,6 +87,26 @@ def make_advanced_counter_maker():
     """
     "*** YOUR CODE HERE ***"
 
+    def counter_maker():
+        global_count = 0
+
+        def counter(args):
+            nonlocal global_count
+            count = 0
+            if args == 'count':
+                count += 1
+                return count
+            elif args == 'global-count':
+                global_count += 1
+                return global_count
+            elif args == 'reset':
+                count = 0
+
+            elif args == 'global-reset':
+                global_count = 0
+
+        return counter
+    return counter_maker
 # Lists
 def trade(first, second):
     """Exchange the smallest prefixes of first and second that have equal sum.
@@ -106,8 +138,20 @@ def trade(first, second):
     m, n = 1, 1
 
     "*** YOUR CODE HERE ***"
+    def is_deal():
+        nonlocal m, n
+        for m in range(1, len(first)+1):
+            amount1 = sum(first[:m])
+            for n in range(1, len(second)+1):
+                amount2 = sum(second[:n])
+                if amount1 == amount2:
+                    return True
+                elif amount2 > amount1:
+                    break
+        return False
 
-    if False: # change this line!
+
+    if is_deal(): # change this line!
         first[:m], second[:n] = second[:n], first[:m]
         return 'Deal!'
     else:
@@ -130,6 +174,12 @@ def make_to_string(front, mid, back, empty_repr):
     '()'
     """
     "*** YOUR CODE HERE ***"
+    def to_string(lnk):
+        if lnk == Link.empty:
+            return empty_repr
+        else:
+            return front + str(lnk.first) + mid + to_string(lnk.rest) + back
+    return to_string
 
 def tree_map(fn, t):
     """Maps the function fn over the entries of t and returns the
@@ -154,6 +204,10 @@ def tree_map(fn, t):
         256
     """
     "*** YOUR CODE HERE ***"
+    if t.is_leaf():
+        return Tree(fn(t.label))
+    else:
+        return Tree(fn(t.label), [tree_map(fn,b) for b in t.branches])
 
 def long_paths(tree, n):
     """Return a list of all paths in tree with length at least n.
@@ -185,6 +239,21 @@ def long_paths(tree, n):
     [Link(0, Link(11, Link(12, Link(13, Link(14)))))]
     """
     "*** YOUR CODE HERE ***"
+    if tree.is_leaf():
+        if n <= 0:
+            return Link(tree.label)
+        else:
+            return Link.empty
+    else:
+        llst = []
+        for path in [long_paths(b,n-1) for b in tree.branches]:
+            if isinstance(path, list):
+                llst.extend( [ Link(tree.label, link) for link in path])
+            elif isinstance(path, Link):
+                llst.append( Link(tree.label, path))
+        return llst
+
+# if long_paths(b,n-1) != Link.empty
 
 # Orders of Growth
 def zap(n):
@@ -228,7 +297,7 @@ class Tree:
     def __eq__(self, other):
         return type(other) is type(self) and self.label == other.label \
                and self.branches == other.branches
-    
+
     def __str__(self):
         def print_tree(t, indent=0):
             tree_str = '  ' * indent + str(t.label) + "\n"
