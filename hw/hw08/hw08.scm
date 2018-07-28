@@ -3,28 +3,47 @@
 
 (define (cadr s)
   'YOUR-CODE-HERE
+  (car (cdr s))
 )
 
 (define (caddr s)
   'YOUR-CODE-HERE
+  (car (cdr (cdr s)))
 )
 
 (define (sign x)
   'YOUR-CODE-HERE
+  (cond ((< x 0) -1)
+        ((= x 0) 0)
+        ((> x 0) 1))
 )
 
 (define (square x) (* x x))
 
 (define (pow b n)
   'YOUR-CODE-HERE
+  (cond ((= n 0) 1)
+        ((even? n) (pow (* b b) (/ n 2)))
+        ((odd? n) (* b (pow (* b b) (/ (- n 1) 2)))))
 )
 
 (define (ordered? s)
   'YOUR-CODE-HERE
+  (cond ((null? s) 'True)
+        ((null? (cdr s)) 'True)
+        ((not (> (car s) (cadr s))) (ordered? (cdr s)))
+        (else 'False))
 )
 
 (define (nodots s)
   'YOUR-CODE-HERE
+  (cond ((null? s) nil)
+        ((not (pair? (car s)))  (cond ((null? (cdr s)) s)
+                                      ((pair? (cdr s)) (cons (car s) (nodots (cdr s))))
+                                      (else (cons (car s) (cons (cdr s) nil)))))
+        ((pair? (car s)) (cond ((null? (cdr s)) s)
+                               ((pair? (cdr s)) (cons (nodots (car s)) (nodots (cdr s))))
+                               (else (cons (nodots (car s)) (cons (cdr s) nil)))))))
 )
 
 ; Sets as sorted lists
@@ -33,8 +52,9 @@
 
 (define (contains? s v)
     (cond ((empty? s) #f)
-          'YOUR-CODE-HERE
-          (else nil) ; replace this line
+          ((> (car s) v) #f)
+          ((eq? (car s) v) #t)
+          ((pair? (cdr s)) (contains? (cdr s) v))
           ))
 
 ; Equivalent Python code, for your reference:
@@ -54,14 +74,16 @@
 
 (define (add s v)
     (cond ((empty? s) (list v))
-          'YOUR-CODE-HERE
-          (else nil) ; replace this line
+          ((< (car s) v) (cons (car s) (add (cdr s) v)))
+          ((= (car s) v) s)
+          ((> (car s) v) (cons v s))
           ))
 
 (define (intersect s t)
-    (cond ((or (empty? s) (empty? t)) nil)
-          'YOUR-CODE-HERE
-          (else nil) ; replace this line
+    (cond ((or (empty? s) (empty? t)) '())
+          ((> (car s) (car t)) (intersect s (cdr t)))
+          ((< (car s) (car t)) (intersect (cdr s) t))
+          ((eq? (car s) (car t)) (cons (car s) (intersect (cdr s) (cdr t))))
           ))
 
 ; Equivalent Python code, for your reference:
@@ -81,6 +103,7 @@
 (define (union s t)
     (cond ((empty? s) t)
           ((empty? t) s)
-          'YOUR-CODE-HERE
-          (else nil) ; replace this line
+          ((> (car s) (car t)) (cons (car t) (union s (cdr t))))
+          ((< (car s) (car t)) (cons (car s) (union (cdr s) t)))
+          ((eq? (car s) (car t)) (cons (car s) (union (cdr s) (cdr t))))
           ))
