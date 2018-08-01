@@ -110,6 +110,10 @@ class Name(Expr):
         Exception raised!
         """
         "*** YOUR CODE HERE ***"
+        try:
+            return env[self.string]
+        except KeyError:
+            raise NameError('No variable {0} in the environment!'.format(self.string))
 
     def __str__(self):
         return self.string
@@ -176,6 +180,14 @@ class CallExpr(Expr):
         Number(14)
         """
         "*** YOUR CODE HERE ***"
+        operator = self.operator.eval(env)
+        operands = []
+        for operand in self.operands:
+            operands.append(operand.eval(env))
+        try:
+            return operator.apply(operands)
+        except ZeroDivisionError as e:
+            print(e)
 
     def __str__(self):
         function = str(self.operator)
@@ -286,6 +298,10 @@ class LambdaFunction(Value):
             raise TypeError("Cannot match parameters {} to arguments {}".format(
                 comma_separated(self.parameters), comma_separated(arguments)))
         "*** YOUR CODE HERE ***"
+        parent = self.parent.copy()
+        parent.update({self.parameters[i] : arguments[i] for i in range(len(arguments))})
+
+        return self.body.eval(parent)
 
     def __str__(self):
         definition = LambdaExpr(self.parameters, self.body)
