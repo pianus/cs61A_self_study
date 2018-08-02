@@ -10,7 +10,131 @@
 ;;; *** Add your own tests here! ***
 ;;; ********************************
 ; BEGIN PROBLEM 0
-'replace-this-line
+
+;;; eval and primitive values
+1
+; expect 1
+nil
+; expect ()
+#t
+; expect #t
+(2 3 . 4)
+; expect Error
+(+ 1 2)
+; expect 3
+(/ 1 0)
+; expect Error
+(+ (- 4 1) 3)
+; expect 6
+(+ 3 . 2)
+; expect Error
+
+;;; buildin procedures
++
+; expect #[+]
+(even? 4)
+; expect #t
+(eval '+)
+;expect #[+]
+
+;;; quote expressions
+'hello_world
+; expect hello_world
+'(3 4 . (2 3))
+; expect (3 4 2 3)
+
+;;; define
+(define a (* (+ 2 3) 6))
+; expect a
+a
+; expect 30
+(define (f x y) (+ (* x x) y))
+; expect f
+(f 3 4)
+; expect 13
+(define g (lambda (x) (+ x 2)))
+; expect g
+(g 6)
+; expect 8
+
+;;; quote
+'(1 (2) xmas . (5))
+; expect (1 (2) xmas 5)
+
+;;; begin (no print method build in)
+(begin (* 2 3) #t)
+; expect #t
+(begin (define day 'xmas) (+ 3 3))
+; expect 6
+
+;;; lambda (tested above)
+;;; child frames
+
+(define (f x)
+        (define (g y) (* x y))
+        g)
+; expect f
+(define y 12)
+; expect y
+((f 3) 7)
+; expect 21
+
+;;; and or cond if
+(and)
+; expect #t
+(and 0)
+; expect 0
+(and 3 4 5)
+; expect 5
+(and #t #f 0 12)
+; expect #f
+
+(or)
+; expect #f
+(or 1 2 3)
+; expect 1
+(or #f #f 0)
+; expect 0
+
+(cond (#f (* 2 3))
+      (#t (+ 3 3))
+      (else 4))
+; expect 6
+(cond (else 4))
+; expect 4
+(cond (else 4)
+      (#t (+ 3 3)))
+; expect Error
+
+(if 1 2 3)
+; expect 2
+(if #f 0 4)
+; expect 4
+(if #f 0)
+; expect
+
+;;; let
+(begin (define x 1) (define y 2))
+; expect y
+(let ((x 12) (y 22)) (* x y))
+; expect 264
+
+;;; mu
+(define (g y)
+        (define a 10)
+        (define b 3)
+        (define f (mu (x) (* x a b))))
+; expect f
+(define a 13)
+; expect a
+(f 7)
+; expect Error
+(define b 8)
+; expect b
+(f 7)
+; expect 728
+
+
 ; END PROBLEM 0
 
 ;;; These are examples from several sections of "The Structure
@@ -60,7 +184,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Move the following (exit) line down the file to run additional tests. ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(exit)
 
 
 ;;; 1.1.2

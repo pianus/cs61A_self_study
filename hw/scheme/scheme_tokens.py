@@ -8,7 +8,7 @@ of tokens.  A token may be:
   * A delimiter, including parentheses, dots, and single quotes
 
 This file also includes some features of Scheme that have not been addressed
-in the course, such as quasiquoting and Scheme strings.
+in the course, such as Scheme strings.
 """
 
 from ucb import main

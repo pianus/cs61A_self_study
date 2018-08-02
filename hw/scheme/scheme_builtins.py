@@ -1,4 +1,4 @@
-"""This module implements the primitives of the Scheme language."""
+"""This module implements the built-in procedures of the Scheme language."""
 
 import math
 import operator
@@ -14,19 +14,19 @@ except:
 class SchemeError(Exception):
     """Exception indicating an error in a Scheme program."""
 
-########################
-# Primitive Operations #
-########################
+#######################
+# Built-In Procedures #
+#######################
 
 # A list of triples (NAME, PYTHON-FUNCTION, INTERNAL-NAME).  Added to by
-# primitive and used in scheme.create_global_frame.
-PRIMITIVES = []
+# builtin and used in scheme.create_global_frame.
+BUILTINS = []
 
-def primitive(*names):
-    """An annotation to convert a Python function into a PrimitiveProcedure."""
+def builtin(*names):
+    """An annotation to convert a Python function into a BuiltinProcedure."""
     def add(fn):
         for name in names:
-            PRIMITIVES.append((name, fn, names[0]))
+            BUILTINS.append((name, fn, names[0]))
         return fn
     return add
 
@@ -38,7 +38,7 @@ def check_type(val, predicate, k, name):
         raise SchemeError(msg.format(k, name, type(val).__name__))
     return val
 
-@primitive("boolean?")
+@builtin("boolean?")
 def scheme_booleanp(x):
     return x is True or x is False
 
@@ -50,11 +50,11 @@ def scheme_falsep(val):
     """Only False is false in Scheme."""
     return val is False
 
-@primitive("not")
+@builtin("not")
 def scheme_not(x):
     return not scheme_truep(x)
 
-@primitive("equal?")
+@builtin("equal?")
 def scheme_equalp(x, y):
     if scheme_pairp(x) and scheme_pairp(y):
         return scheme_equalp(x.first, y.first) and scheme_equalp(x.second, y.second)
@@ -63,7 +63,7 @@ def scheme_equalp(x, y):
     else:
         return type(x) == type(y) and x == y
 
-@primitive("eq?")
+@builtin("eq?")
 def scheme_eqp(x, y):
     if scheme_numberp(x) and scheme_numberp(y):
         return x == y
@@ -72,30 +72,30 @@ def scheme_eqp(x, y):
     else:
         return x is y
 
-@primitive("pair?")
+@builtin("pair?")
 def scheme_pairp(x):
     return isinstance(x, Pair)
 
 # Streams
-@primitive("promise?")
+@builtin("promise?")
 def scheme_promisep(x):
     return type(x).__name__ == 'Promise'
 
-@primitive("force")
+@builtin("force")
 def scheme_force(x):
     check_type(x, scheme_promisep, 0, 'promise')
     return x.evaluate()
 
-@primitive("cdr-stream")
+@builtin("cdr-stream")
 def scheme_cdr_stream(x):
     check_type(x, lambda x: scheme_pairp(x) and scheme_promisep(x.second), 0, 'cdr-stream')
     return scheme_force(x.second)
 
-@primitive("null?")
+@builtin("null?")
 def scheme_nullp(x):
     return x is nil
 
-@primitive("list?")
+@builtin("list?")
 def scheme_listp(x):
     """Return whether x is a well-formed list. Assumes no cycles."""
     while x is not nil:
@@ -104,36 +104,46 @@ def scheme_listp(x):
         x = x.second
     return True
 
-@primitive("length")
+@builtin("length")
 def scheme_length(x):
     check_type(x, scheme_listp, 0, 'length')
     if x is nil:
         return 0
     return len(x)
 
-@primitive("cons")
+@builtin("cons")
 def scheme_cons(x, y):
     return Pair(x, y)
 
-@primitive("car")
+@builtin("car")
 def scheme_car(x):
     check_type(x, scheme_pairp, 0, 'car')
     return x.first
 
-@primitive("cdr")
+@builtin("cdr")
 def scheme_cdr(x):
     check_type(x, scheme_pairp, 0, 'cdr')
     return x.second
 
+# Mutation extras
+@builtin("set-car!")
+def scheme_car(x, y):
+    check_type(x, scheme_pairp, 0, 'set-car!')
+    x.first = y
 
-@primitive("list")
+@builtin("set-cdr!")
+def scheme_cdr(x, y):
+    check_type(x, scheme_pairp, 0, 'set-cdr!')
+    x.second = y
+
+@builtin("list")
 def scheme_list(*vals):
     result = nil
     for e in reversed(vals):
         result = Pair(e, result)
     return result
 
-@primitive("append")
+@builtin("append")
 def scheme_append(*vals):
     if len(vals) == 0:
         return nil
@@ -151,19 +161,19 @@ def scheme_append(*vals):
             result = r
     return result
 
-@primitive("string?")
+@builtin("string?")
 def scheme_stringp(x):
     return isinstance(x, str) and x.startswith('"')
 
-@primitive("symbol?")
+@builtin("symbol?")
 def scheme_symbolp(x):
     return isinstance(x, str) and not scheme_stringp(x)
 
-@primitive("number?")
+@builtin("number?")
 def scheme_numberp(x):
     return isinstance(x, (int, float)) and not scheme_booleanp(x)
 
-@primitive("integer?")
+@builtin("integer?")
 def scheme_integerp(x):
     return scheme_numberp(x) and (isinstance(x, int) or round(x) == x)
 
@@ -185,22 +195,22 @@ def _arith(fn, init, vals):
         s = round(s)
     return s
 
-@primitive("+")
+@builtin("+")
 def scheme_add(*vals):
     return _arith(operator.add, 0, vals)
 
-@primitive("-")
+@builtin("-")
 def scheme_sub(val0, *vals):
     _check_nums(val0, *vals) # fixes off-by-one error
     if len(vals) == 0:
         return -val0
     return _arith(operator.sub, val0, vals)
 
-@primitive("*")
+@builtin("*")
 def scheme_mul(*vals):
     return _arith(operator.mul, 1, vals)
 
-@primitive("/")
+@builtin("/")
 def scheme_div(val0, *vals):
     _check_nums(val0, *vals) # fixes off-by-one error
     try:
@@ -210,16 +220,16 @@ def scheme_div(val0, *vals):
     except ZeroDivisionError as err:
         raise SchemeError(err)
 
-@primitive("expt")
+@builtin("expt")
 def scheme_expt(val0, val1):
     _check_nums(val0, val1)
     return pow(val0, val1)
 
-@primitive("abs")
+@builtin("abs")
 def scheme_abs(val0):
     return abs(val0)
 
-@primitive("quotient")
+@builtin("quotient")
 def scheme_quo(val0, val1):
     _check_nums(val0, val1)
     try:
@@ -227,7 +237,7 @@ def scheme_quo(val0, val1):
     except ZeroDivisionError as err:
         raise SchemeError(err)
 
-@primitive("modulo")
+@builtin("modulo")
 def scheme_modulo(val0, val1):
     _check_nums(val0, val1)
     try:
@@ -235,7 +245,7 @@ def scheme_modulo(val0, val1):
     except ZeroDivisionError as err:
         raise SchemeError(err)
 
-@primitive("remainder")
+@builtin("remainder")
 def scheme_remainder(val0, val1):
     _check_nums(val0, val1)
     try:
@@ -247,7 +257,7 @@ def scheme_remainder(val0, val1):
     return result
 
 def number_fn(module, name):
-    """A Scheme primitive that calls the numeric Python function named
+    """A Scheme built-in procedure that calls the numeric Python function named
     MODULE.FN."""
     py_fn = getattr(module, name)
     def scheme_fn(*vals):
@@ -255,48 +265,48 @@ def number_fn(module, name):
         return py_fn(*vals)
     return scheme_fn
 
-# Add number functions in the math module as Scheme primitives
+# Add number functions in the math module as built-in procedures in Scheme
 for _name in ["acos", "acosh", "asin", "asinh", "atan", "atan2", "atanh",
               "ceil", "copysign", "cos", "cosh", "degrees", "floor", "log",
               "log10", "log1p", "log2", "radians", "sin", "sinh", "sqrt",
               "tan", "tanh", "trunc"]:
-    primitive(_name)(number_fn(math, _name))
+    builtin(_name)(number_fn(math, _name))
 
 def _numcomp(op, x, y):
     _check_nums(x, y)
     return op(x, y)
 
-@primitive("=")
+@builtin("=")
 def scheme_eq(x, y):
     return _numcomp(operator.eq, x, y)
 
-@primitive("<")
+@builtin("<")
 def scheme_lt(x, y):
     return _numcomp(operator.lt, x, y)
 
-@primitive(">")
+@builtin(">")
 def scheme_gt(x, y):
     return _numcomp(operator.gt, x, y)
 
-@primitive("<=")
+@builtin("<=")
 def scheme_le(x, y):
     return _numcomp(operator.le, x, y)
 
-@primitive(">=")
+@builtin(">=")
 def scheme_ge(x, y):
     return _numcomp(operator.ge, x, y)
 
-@primitive("even?")
+@builtin("even?")
 def scheme_evenp(x):
     _check_nums(x)
     return x % 2 == 0
 
-@primitive("odd?")
+@builtin("odd?")
 def scheme_oddp(x):
     _check_nums(x)
     return x % 2 == 1
 
-@primitive("zero?")
+@builtin("zero?")
 def scheme_zerop(x):
     _check_nums(x)
     return x == 0
@@ -305,32 +315,32 @@ def scheme_zerop(x):
 ## Other operations
 ##
 
-@primitive("atom?")
+@builtin("atom?")
 def scheme_atomp(x):
-    return (scheme_booleanp(x) or scheme_numberp(x) or
-            scheme_symbolp(x) or scheme_nullp(x))
+    return (scheme_booleanp(x) or scheme_numberp(x) or scheme_symbolp(x) or
+            scheme_nullp(x) or scheme_stringp(x))
 
-@primitive("display")
+@builtin("display")
 def scheme_display(val):
     if scheme_stringp(val):
         val = eval(val)
     print(repl_str(val), end="")
 
-@primitive("print")
+@builtin("print")
 def scheme_print(val):
     print(repl_str(val))
 
-@primitive("newline")
+@builtin("newline")
 def scheme_newline():
     print()
     sys.stdout.flush()
 
-@primitive("error")
+@builtin("error")
 def scheme_error(msg=None):
     msg = "" if msg is None else repl_str(msg)
     raise SchemeError(msg)
 
-@primitive("exit")
+@builtin("exit")
 def scheme_exit():
     raise EOFError
 
@@ -350,14 +360,14 @@ def _tscheme_prep():
         turtle.title("Scheme Turtles")
         turtle.mode('logo')
 
-@primitive("forward", "fd")
+@builtin("forward", "fd")
 def tscheme_forward(n):
     """Move the turtle forward a distance N units on the current heading."""
     _check_nums(n)
     _tscheme_prep()
     turtle.forward(n)
 
-@primitive("backward", "back", "bk")
+@builtin("backward", "back", "bk")
 def tscheme_backward(n):
     """Move the turtle backward a distance N units on the current heading,
     without changing direction."""
@@ -365,21 +375,21 @@ def tscheme_backward(n):
     _tscheme_prep()
     turtle.backward(n)
 
-@primitive("left", "lt")
+@builtin("left", "lt")
 def tscheme_left(n):
     """Rotate the turtle's heading N degrees counterclockwise."""
     _check_nums(n)
     _tscheme_prep()
     turtle.left(n)
 
-@primitive("right", "rt")
+@builtin("right", "rt")
 def tscheme_right(n):
     """Rotate the turtle's heading N degrees clockwise."""
     _check_nums(n)
     _tscheme_prep()
     turtle.right(n)
 
-@primitive("circle")
+@builtin("circle")
 def tscheme_circle(r, extent=None):
     """Draw a circle with center R units to the left of the turtle (i.e.,
     right if N is negative.  If EXTENT is not None, then draw EXTENT degrees
@@ -393,51 +403,51 @@ def tscheme_circle(r, extent=None):
     _tscheme_prep()
     turtle.circle(r, extent and extent)
 
-@primitive("setposition", "setpos", "goto")
+@builtin("setposition", "setpos", "goto")
 def tscheme_setposition(x, y):
     """Set turtle's position to (X,Y), heading unchanged."""
     _check_nums(x, y)
     _tscheme_prep()
     turtle.setposition(x, y)
 
-@primitive("setheading", "seth")
+@builtin("setheading", "seth")
 def tscheme_setheading(h):
     """Set the turtle's heading H degrees clockwise from north (up)."""
     _check_nums(h)
     _tscheme_prep()
     turtle.setheading(h)
 
-@primitive("penup", "pu")
+@builtin("penup", "pu")
 def tscheme_penup():
     """Raise the pen, so that the turtle does not draw."""
     _tscheme_prep()
     turtle.penup()
 
-@primitive("pendown", "pd")
+@builtin("pendown", "pd")
 def tscheme_pendown():
     """Lower the pen, so that the turtle starts drawing."""
     _tscheme_prep()
     turtle.pendown()
 
-@primitive("showturtle", "st")
+@builtin("showturtle", "st")
 def tscheme_showturtle():
     """Make turtle visible."""
     _tscheme_prep()
     turtle.showturtle()
 
-@primitive("hideturtle", "ht")
+@builtin("hideturtle", "ht")
 def tscheme_hideturtle():
     """Make turtle visible."""
     _tscheme_prep()
     turtle.hideturtle()
 
-@primitive("clear")
+@builtin("clear")
 def tscheme_clear():
     """Clear the drawing, leaving the turtle unchanged."""
     _tscheme_prep()
     turtle.clear()
 
-@primitive("color")
+@builtin("color")
 def tscheme_color(c):
     """Set the color to C, a string such as '"red"' or '"#ffc0c0"' (representing
     hexadecimal red, green, and blue values."""
@@ -445,7 +455,7 @@ def tscheme_color(c):
     check_type(c, scheme_stringp, 0, "color")
     turtle.color(eval(c))
 
-@primitive("rgb")
+@builtin("rgb")
 def tscheme_rgb(red, green, blue):
     """Return a color from RED, GREEN, and BLUE values from 0 to 1."""
     colors = (red, green, blue)
@@ -455,25 +465,25 @@ def tscheme_rgb(red, green, blue):
     scaled = tuple(int(x*255) for x in colors)
     return '"#%02x%02x%02x"' % scaled
 
-@primitive("begin_fill")
+@builtin("begin_fill")
 def tscheme_begin_fill():
     """Start a sequence of moves that outline a shape to be filled."""
     _tscheme_prep()
     turtle.begin_fill()
 
-@primitive("end_fill")
+@builtin("end_fill")
 def tscheme_end_fill():
     """Fill in shape drawn since last begin_fill."""
     _tscheme_prep()
     turtle.end_fill()
 
-@primitive("bgcolor")
+@builtin("bgcolor")
 def tscheme_bgcolor(c):
     _tscheme_prep()
     check_type(c, scheme_stringp, 0, "bgcolor")
     turtle.bgcolor(eval(c))
 
-@primitive("exitonclick")
+@builtin("exitonclick")
 def tscheme_exitonclick():
     """Wait for a click on the turtle window, and then close it."""
     global _turtle_screen_on
@@ -482,7 +492,7 @@ def tscheme_exitonclick():
         turtle.exitonclick()
         _turtle_screen_on = False
 
-@primitive("speed")
+@builtin("speed")
 def tscheme_speed(s):
     """Set the turtle's animation speed as indicated by S (an integer in
     0-10, with 0 indicating no animation (lines draw instantly), and 1-10
@@ -491,7 +501,7 @@ def tscheme_speed(s):
     _tscheme_prep()
     turtle.speed(s)
 
-@primitive("pixel")
+@builtin("pixel")
 def tscheme_pixel(x, y, c):
     """Draw a filled box of pixels (default 1 pixel) at (X, Y) in color C."""
     check_type(c, scheme_stringp, 0, "pixel")
@@ -510,7 +520,7 @@ def tscheme_pixel(x, y, c):
                 tscheme_pixel.image.put(color, (screenx, screeny))
 
 tscheme_pixel.size = 1
-@primitive("pixelsize")
+@builtin("pixelsize")
 def tscheme_pixelsize(size):
     """Change pixel size to SIZE."""
     _check_nums(size)
@@ -518,12 +528,12 @@ def tscheme_pixelsize(size):
         raise SchemeError("Invalid pixel size: " + repl_str(size))
     tscheme_pixel.size = size
 
-@primitive("screen_width")
+@builtin("screen_width")
 def tscheme_screen_width():
     """Screen width in pixels of the current size (default 1)."""
     return turtle.getcanvas().winfo_width() // tscheme_pixel.size
 
-@primitive("screen_height")
+@builtin("screen_height")
 def tscheme_screen_height():
     """Screen height in pixels of the current size (default 1)."""
     return turtle.getcanvas().winfo_height() // tscheme_pixel.size

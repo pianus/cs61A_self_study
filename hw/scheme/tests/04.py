@@ -8,31 +8,29 @@ test = {
           'code': r"""
           >>> env = create_global_frame()
           >>> twos = Pair(2, Pair(2, nil))
-          >>> plus = PrimitiveProcedure(scheme_add) # + procedure
+          >>> plus = BuiltinProcedure(scheme_add) # + procedure
           >>> scheme_apply(plus, twos, env) # Type SchemeError if you think this errors
-          46beb7deeeb5e9af1c8d785b12558317
-          # locked
+          4
           """,
           'hidden': False,
-          'locked': True
+          'locked': False
         },
         {
           'code': r"""
           >>> env = create_global_frame()
           >>> twos = Pair(2, Pair(2, nil))
-          >>> oddp = PrimitiveProcedure(scheme_oddp) # odd? procedure
+          >>> oddp = BuiltinProcedure(scheme_oddp) # odd? procedure
           >>> scheme_apply(oddp, twos, env) # Type SchemeError if you think this errors
-          ec908af60f03727428c7ee3f22ec3cd8
-          # locked
+          SchemeError
           """,
           'hidden': False,
-          'locked': True
+          'locked': False
         },
         {
           'code': r"""
           >>> env = create_global_frame()
           >>> two = Pair(2, nil)
-          >>> eval = PrimitiveProcedure(scheme_eval, True) # eval procedure
+          >>> eval = BuiltinProcedure(scheme_eval, True) # eval procedure
           >>> scheme_apply(eval, two, env) # be sure to check use_env
           2
           """,
@@ -50,7 +48,7 @@ test = {
           ...         x += 1
           ...         return x
           ...     return scheme_counter
-          >>> counter = PrimitiveProcedure(make_scheme_counter()) # counter
+          >>> counter = BuiltinProcedure(make_scheme_counter()) # counter
           >>> scheme_apply(counter, args, env) # only call procedure.fn once!
           1
           """,

@@ -1,6 +1,6 @@
 """A Scheme interpreter and its read-eval-print loop."""
 
-from scheme_primitives import *
+from scheme_builtins import *
 from scheme_reader import *
 from ucb import main, trace
 
@@ -32,17 +32,24 @@ def scheme_eval(expr, env, _=None): # Optional third argument is ignored
     else:
         # BEGIN PROBLEM 5
         "*** YOUR CODE HERE ***"
+        first_eval = scheme_eval(first, env)
+        check_procedure(first_eval)
+
+        rest = rest.map(lambda x: scheme_eval(x, env))
+        return scheme_apply(first_eval, rest, env)
+
+
         # END PROBLEM 5
 
 def self_evaluating(expr):
     """Return whether EXPR evaluates to itself."""
-    return scheme_atomp(expr) or scheme_stringp(expr) or expr is None
+    return (scheme_atomp(expr) and not scheme_symbolp(expr)) or expr is None
 
 def scheme_apply(procedure, args, env):
     """Apply Scheme PROCEDURE to argument values ARGS (a Scheme list) in
     environment ENV."""
     check_procedure(procedure)
-    if isinstance(procedure, PrimitiveProcedure):
+    if isinstance(procedure, BuiltinProcedure):
         return procedure.apply(args, env)
     else:
         new_env = procedure.make_call_frame(args, env)
@@ -52,7 +59,15 @@ def eval_all(expressions, env):
     """Evaluate each expression im the Scheme list EXPRESSIONS in
     environment ENV and return the value of the last."""
     # BEGIN PROBLEM 8
-    return scheme_eval(expressions.first, env)
+
+    if expressions is nil:
+        return
+    else:
+        result = scheme_eval(expressions.first, env)
+        if expressions.second is nil:
+            return result
+        else:
+            return eval_all(expressions.second, env)
     # END PROBLEM 8
 
 ################
@@ -77,12 +92,31 @@ class Frame:
         """Define Scheme SYMBOL to have VALUE."""
         # BEGIN PROBLEM 3
         "*** YOUR CODE HERE ***"
+        self.bindings[symbol] = value
         # END PROBLEM 3
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL. Errors if SYMBOL is not found."""
         # BEGIN PROBLEM 3
         "*** YOUR CODE HERE ***"
+        if symbol in self.bindings:
+            return self.bindings[symbol]
+        elif self.parent is not None:
+            return self.parent.lookup(symbol)
+        # END PROBLEM 3
+        raise SchemeError('unknown identifier: {0}'.format(symbol))
+
+    # Mutation extension
+    def rebind(self, symbol, value):
+        """Rebind SYMBOL to VALUE in the first frame in which SYMBOL is bound.
+        Errors if SYMBOL is not found."""
+        # BEGIN PROBLEM 3
+        "*** YOUR CODE HERE ***"
+        if symbol in self.bindings:
+            self.bindings[symbol] = value
+            return
+        elif self.parent is not None:
+            return self.parent.rebind(symbol, value)
         # END PROBLEM 3
         raise SchemeError('unknown identifier: {0}'.format(symbol))
 
@@ -97,11 +131,21 @@ class Frame:
         >>> env.make_child_frame(formals, expressions)
         <{a: 1, b: 2, c: 3} -> <Global Frame>>
         """
-        child = Frame(self) # Create a new child with self as the parent
         # BEGIN PROBLEM 11
         "*** YOUR CODE HERE ***"
-        # END PROBLEM 11
+
+        child = Frame(self)
+        def bind_child(formals, vals):
+            if formals is nil and vals is nil:
+                return child
+            elif formals is nil or vals is nil:
+                raise SchemeError('numbers of formals does not match vals')
+            else:
+                child.define(formals.first, vals.first)
+                bind_child(formals.second, vals.second)
+        bind_child(formals, vals)
         return child
+        # END PROBLEM 11
 
 ##############
 # Procedures #
@@ -113,10 +157,10 @@ class Procedure:
 def scheme_procedurep(x):
     return isinstance(x, Procedure)
 
-class PrimitiveProcedure(Procedure):
+class BuiltinProcedure(Procedure):
     """A Scheme procedure defined as a Python function."""
 
-    def __init__(self, fn, use_env=False, name='primitive'):
+    def __init__(self, fn, use_env=False, name='builtin'):
         self.name = name
         self.fn = fn
         self.use_env = use_env
@@ -142,6 +186,12 @@ class PrimitiveProcedure(Procedure):
             args = args.second
         # BEGIN PROBLEM 4
         "*** YOUR CODE HERE ***"
+        if self.use_env:
+            python_args.append(env)
+        try:
+            return self.fn(*python_args)
+        except TypeError:
+            raise SchemeError('wrong number of arguments')
         # END PROBLEM 4
 
 class LambdaProcedure(Procedure):
@@ -160,6 +210,8 @@ class LambdaProcedure(Procedure):
         of values, for a lexically-scoped call evaluated in environment ENV."""
         # BEGIN PROBLEM 12
         "*** YOUR CODE HERE ***"
+        frame = self.env.make_child_frame(self.formals, args)
+        return frame
         # END PROBLEM 12
 
     def __str__(self):
@@ -177,12 +229,12 @@ class MacroProcedure(LambdaProcedure):
         """Apply this macro to the operand expressions."""
         return complete_apply(self, operands, env)
 
-def add_primitives(frame, funcs_and_names):
+def add_builtins(frame, funcs_and_names):
     """Enter bindings in FUNCS_AND_NAMES into FRAME, an environment frame,
-    as primitive procedures. Each item in FUNCS_AND_NAMES has the form
+    as built-in procedures. Each item in FUNCS_AND_NAMES has the form
     (NAME, PYTHON-FUNCTION, INTERNAL-NAME)."""
     for name, fn, proc_name in funcs_and_names:
-        frame.define(name, PrimitiveProcedure(fn, name=proc_name))
+        frame.define(name, BuiltinProcedure(fn, name=proc_name))
 
 #################
 # Special Forms #
@@ -201,10 +253,15 @@ def do_define_form(expressions, env):
         check_form(expressions, 2, 2)
         # BEGIN PROBLEM 6
         "*** YOUR CODE HERE ***"
+        env.define(target, scheme_eval(expressions.second.first, env))
+        return target
         # END PROBLEM 6
     elif isinstance(target, Pair) and scheme_symbolp(target.first):
         # BEGIN PROBLEM 10
         "*** YOUR CODE HERE ***"
+        lam = Pair('lambda', Pair(target.second, expressions.second))
+
+        return do_define_form(Pair(target.first, Pair(lam, nil)), env)
         # END PROBLEM 10
     else:
         bad_target = target.first if isinstance(target, Pair) else target
@@ -215,6 +272,7 @@ def do_quote_form(expressions, env):
     check_form(expressions, 1, 1)
     # BEGIN PROBLEM 7
     "*** YOUR CODE HERE ***"
+    return expressions.first
     # END PROBLEM 7
 
 def do_begin_form(expressions, env):
@@ -229,6 +287,8 @@ def do_lambda_form(expressions, env):
     check_formals(formals)
     # BEGIN PROBLEM 9
     "*** YOUR CODE HERE ***"
+    return LambdaProcedure(formals, expressions.second, env)
+
     # END PROBLEM 9
 
 def do_if_form(expressions, env):
@@ -243,12 +303,30 @@ def do_and_form(expressions, env):
     """Evaluate a (short-circuited) and form."""
     # BEGIN PROBLEM 13
     "*** YOUR CODE HERE ***"
+    check_form(expressions, 0)
+    while expressions is not nil:
+        current_exp = scheme_eval(expressions.first, env)
+        if not scheme_truep(current_exp):
+            return current_exp
+        if expressions.second is nil:
+            return current_exp
+        expressions = expressions.second
+    return True
     # END PROBLEM 13
 
 def do_or_form(expressions, env):
     """Evaluate a (short-circuited) or form."""
     # BEGIN PROBLEM 13
     "*** YOUR CODE HERE ***"
+    check_form(expressions, 0)
+    while expressions is not nil:
+        current_exp = scheme_eval(expressions.first, env)
+        if scheme_truep(current_exp):
+            return current_exp
+        if expressions.second is nil:
+            return current_exp
+        expressions = expressions.second
+    return False
     # END PROBLEM 13
 
 def do_cond_form(expressions, env):
@@ -265,6 +343,12 @@ def do_cond_form(expressions, env):
         if scheme_truep(test):
             # BEGIN PROBLEM 14
             "*** YOUR CODE HERE ***"
+            procedure = clause.second
+            if procedure is nil:
+                return test
+            else:
+                return eval_all(procedure, env)
+
             # END PROBLEM 14
         expressions = expressions.second
 
@@ -283,6 +367,18 @@ def make_let_frame(bindings, env):
         raise SchemeError('bad bindings list in let form')
     # BEGIN PROBLEM 15
     "*** YOUR CODE HERE ***"
+    formals = nil
+    vals = nil
+    while bindings is not nil:
+        check_form(bindings.first, 1, 2)
+        formal = bindings.first.first
+        if not scheme_symbolp(formal):
+            raise SchemeError('{0} is not a stmbol'.format(formal))
+        val = eval_all(bindings.first.second, env)
+        formals = Pair(formal, formals)
+        vals = Pair(val, vals)
+        bindings = bindings.second
+    return env.make_child_frame(formals, vals)
     # END PROBLEM 15
 
 def do_define_macro(expressions, env):
@@ -290,6 +386,41 @@ def do_define_macro(expressions, env):
     # BEGIN Problem 21
     "*** YOUR CODE HERE ***"
     # END Problem 21
+
+def do_set_form(expressions, env):
+    """Evaluate set! form with parameters EXPRESSIONS in environment ENV."""
+    check_form(expressions, 2)
+    name = expressions.first
+    if not scheme_symbolp(name):
+        raise SchemeError('bad argument: ' + repl_str(name))
+    value = scheme_eval(expressions.second.first, env)
+    env.rebind(name, value)
+
+def do_quasiquote_form(expressions, env):
+    """Evaluate a quasiquote form with parameters EXPRESSIONS in
+    environment ENV."""
+    def quasiquote_item(val, env, level):
+        """Evaluate Scheme expression VAL that is nested at depth LEVEL in
+        a quasiquote form in environment ENV."""
+        if not scheme_pairp(val):
+            return val
+        if val.first == 'unquote':
+            level -= 1
+            if level == 0:
+                expressions = val.second
+                check_form(expressions, 1, 1)
+                return scheme_eval(expressions.first, env)
+        elif val.first == 'quasiquote':
+            level += 1
+        first = quasiquote_item(val.first, env, level)
+        second = quasiquote_item(val.second, env, level)
+        return Pair(first, second)
+
+    check_form(expressions, 1, 1)
+    return quasiquote_item(expressions.first, env, 1)
+
+def do_unquote(expressions, env):
+    raise SchemeError('unquote outside of quasiquote')
 
 
 SPECIAL_FORMS = {
@@ -303,6 +434,9 @@ SPECIAL_FORMS = {
     'or': do_or_form,
     'quote': do_quote_form,
     'define-macro': do_define_macro,
+    'set!': do_set_form,
+    'quasiquote': do_quasiquote_form,
+    'unquote': do_unquote,
 }
 
 # Utility methods for checking the structure of Scheme programs
@@ -341,6 +475,9 @@ def check_formals(formals):
         check_and_add(formals.first)
         formals = formals.second
 
+    if formals != nil:
+        check_and_add(formals)
+
 def check_procedure(procedure):
     """Check that PROCEDURE is a valid Scheme procedure."""
     if not scheme_procedurep(procedure):
@@ -371,6 +508,9 @@ class MuProcedure(Procedure):
 
     # BEGIN PROBLEM 16
     "*** YOUR CODE HERE ***"
+    def make_call_frame(self, vals, env):
+        return env.make_child_frame(self.formals, vals)
+
     # END PROBLEM 16
 
     def __str__(self):
@@ -387,6 +527,7 @@ def do_mu_form(expressions, env):
     check_formals(formals)
     # BEGIN PROBLEM 16
     "*** YOUR CODE HERE ***"
+    return MuProcedure(formals, expressions.second)
     # END PROBLEM 16
 
 SPECIAL_FORMS['mu'] = do_mu_form
@@ -451,8 +592,8 @@ def optimize_tail_calls(original_scheme_eval):
         """
         if tail and not scheme_symbolp(expr) and not self_evaluating(expr):
             return Thunk(expr, env)
-        else:
-            result = Thunk(expr, env)
+
+        result = Thunk(expr, env)
         # BEGIN
         "*** YOUR CODE HERE ***"
         # END
@@ -574,21 +715,21 @@ def create_global_frame():
     """Initialize and return a single-frame environment with built-in names."""
     env = Frame(None)
     env.define('eval',
-               PrimitiveProcedure(scheme_eval, True, 'eval'))
+               BuiltinProcedure(scheme_eval, True, 'eval'))
     env.define('apply',
-               PrimitiveProcedure(complete_apply, True, 'apply'))
+               BuiltinProcedure(complete_apply, True, 'apply'))
     env.define('load',
-               PrimitiveProcedure(scheme_load, True, 'load'))
+               BuiltinProcedure(scheme_load, True, 'load'))
     env.define('procedure?',
-               PrimitiveProcedure(scheme_procedurep, False, 'procedure?'))
+               BuiltinProcedure(scheme_procedurep, False, 'procedure?'))
     env.define('map',
-               PrimitiveProcedure(scheme_map, True, 'map'))
+               BuiltinProcedure(scheme_map, True, 'map'))
     env.define('filter',
-               PrimitiveProcedure(scheme_filter, True, 'filter'))
+               BuiltinProcedure(scheme_filter, True, 'filter'))
     env.define('reduce',
-               PrimitiveProcedure(scheme_reduce, True, 'reduce'))
+               BuiltinProcedure(scheme_reduce, True, 'reduce'))
     env.define('undefined', None)
-    add_primitives(env, PRIMITIVES)
+    add_builtins(env, BUILTINS)
     return env
 
 @main

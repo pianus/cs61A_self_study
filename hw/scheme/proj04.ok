@@ -1,6 +1,6 @@
 {
   "name": "Project 4: Scheme Interpreter",
-  "endpoint": "cal/cs61a/sp18/proj04",
+  "endpoint": "cal/cs61a/su18/proj04",
   "src": [
     "scheme_reader.py",
     "scheme.py",

@@ -92,6 +92,10 @@ nil = nil() # Assignment hides the nil class; there is only one instance
 
 # Scheme list parser
 
+# Quotation markers
+quotes = {"'":  'quote',
+          '`':  'quasiquote',
+          ',':  'unquote'}
 
 def scheme_read(src):
     """Read the next expression from SRC, a Buffer of tokens.
@@ -111,14 +115,24 @@ def scheme_read(src):
     if val == 'nil':
         # BEGIN PROBLEM 1
         "*** YOUR CODE HERE ***"
+        return nil
         # END PROBLEM 1
     elif val == '(':
         # BEGIN PROBLEM 1
         "*** YOUR CODE HERE ***"
+        return read_tail(src)
         # END PROBLEM 1
-    elif val == "'":
+    elif val in quotes:
         # BEGIN PROBLEM 7
         "*** YOUR CODE HERE ***"
+        quoted = scheme_read(src)
+        quoted = Pair(quoted, nil)
+        if val == "'":
+            return Pair('quote', quoted)
+        elif val == "`":
+            return Pair('quasiquote', quoted)
+        elif val == ",":
+            return Pair('unquote', quoted) 
         # END PROBLEM 7
     elif val not in DELIMITERS:
         return val
@@ -141,14 +155,28 @@ def read_tail(src):
         elif src.current() == ')':
             # BEGIN PROBLEM 1
             "*** YOUR CODE HERE ***"
+            src.remove_front()
+            return nil
             # END PROBLEM 1
         elif src.current() == '.':
             # BEGIN PROBLEM 2
             "*** YOUR CODE HERE ***"
+            src.remove_front()
+            pair_end = scheme_read(src)
+            if src.current() == ')':
+                src.remove_front()
+                return pair_end
+            else:
+                raise SyntaxError('invalid list')
             # END PROBLEM 2
         else:
             # BEGIN PROBLEM 1
             "*** YOUR CODE HERE ***"
+
+            first = scheme_read(src)
+            second = read_tail(src)
+
+            return Pair(first, second)
             # END PROBLEM 1
     except EOFError:
         raise SyntaxError('unexpected end of file')
@@ -182,8 +210,6 @@ def repl_str(val):
     return str(val)
 
 # Interactive loop
-
-@main
 def read_print_loop():
     """Run a read-print loop for Scheme expressions."""
     while True:
@@ -198,3 +224,8 @@ def read_print_loop():
         except (KeyboardInterrupt, EOFError):  # <Control>-D, etc.
             print()
             return
+
+@main
+def main(*args):
+    if len(args) and '--repl' in args:
+        read_print_loop()

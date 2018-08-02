@@ -5,48 +5,94 @@ test = {
     {
       'cases': [
         {
-          'answer': '78056c884b93b0e2f8a5d5d34652948c',
+          'answer': 'A primitive expression or a combination',
           'choices': [
-            'A primitive expression or a list expression',
+            'A primitive expression or a combination',
             'A pair or a list',
             'A special form or a call expression',
             'A primitive expression or a special form'
           ],
           'hidden': False,
-          'locked': True,
+          'locked': False,
           'question': 'A Scheme expression can be either...'
         },
         {
-          'answer': 'f9007bdc473e42efc27b7ee858aff42e',
+          'answer': 'env.lookup(expr)',
           'choices': [
-            'env.lookup(expr)',
-            'expr.first',
+            'env.find(name)',
             'scheme_symbolp(expr)',
+            'env.lookup(expr)',
             'SPECIAL_FORMS[first](rest, env)'
           ],
           'hidden': False,
-          'locked': True,
+          'locked': False,
           'question': 'What expression in the body of scheme_eval finds the value of a name?'
         },
         {
-          'answer': '8a3862b62f1e48f7772dc090bf991098',
+          'answer': 'Check if the first element in the list is a symbol and that the symbol is in the dictionary SPECIAL_FORMS',
           'choices': [
             r"""
-            Check if the first element in the list is a symbol and
-                        that that symbol is in the dictionary SPECIAL_FORMS
+            Check if the first element in the list is a symbol and that the
+            symbol is in the dictionary SPECIAL_FORMS
             """,
             'Check if the first element in the list is a symbol',
             'Check if the expression is in the dictionary SPECIAL_FORMS'
           ],
           'hidden': False,
-          'locked': True,
+          'locked': False,
+          'question': 'How do we know if a given combination is a special form?'
+        },
+        {
+          'answer': 'Whenever a user-defined procedure is called; we use the make_call_frame method of LambdaProcedure',
+          'choices': [
+            r"""
+            Whenever a primitive or user-defined procedure is called; we use
+            the apply method in subclasses of Procedure
+            """,
+            r"""
+            Whenever a new procedure is defined; we use the make_child_frame
+            method in Frame
+            """,
+            r"""
+            Whenever a user-defined procedure is called; we use the
+            make_call_frame method of LambdaProcedure
+            """,
+            r"""
+            Whenever a primitive or user-defined procedure is called; we use
+            the make_call_frame method of LambdaProcedure
+            """
+          ],
+          'hidden': False,
+          'locked': False,
+          'question': 'When and how do we create new Frames?'
+        },
+        {
+          'answer': 'I and II',
+          'choices': [
+            'I only',
+            'II only',
+            'III only',
+            'I and II',
+            'I and III',
+            'II and III',
+            'I, II and III'
+          ],
+          'hidden': False,
+          'locked': False,
           'question': r"""
-          How do we know if a given list expression is a special
-                      form?
+          What is the difference between applying builtins and applying user-defined procedures?
+          (Choose all that apply)
+          
+          I.   User-defined procedures open a new frame; builtins do not
+          II.  Builtins simply execute a predefined function; user-defined
+               procedures must evaluate additional expressions in the body
+          III. Builtins have a fixed number of arguments; user-defined procedures do not
+          
+          ---
           """
         },
         {
-          'answer': '9257b8821d358e91004e461beaadc82b',
+          'answer': 'SchemeError("1 is not callable")',
           'choices': [
             'SchemeError("malformed list: (1)")',
             'SchemeError("1 is not callable")',
@@ -54,7 +100,7 @@ test = {
             'SchemeError("unknown identifier: 1")'
           ],
           'hidden': False,
-          'locked': True,
+          'locked': False,
           'question': 'What exception should be raised for the expression (1)?'
         }
       ],
