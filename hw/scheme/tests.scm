@@ -120,18 +120,17 @@ a
 ; expect 264
 
 ;;; mu
+(define b 8)
+; expect b
+(define a 13)
+; expect a
 (define (g y)
         (define a 10)
         (define b 3)
-        (define f (mu (x) (* x a b))))
-; expect f
-(define a 13)
-; expect a
-(f 7)
-; expect Error
-(define b 8)
-; expect b
-(f 7)
+        (define f (mu (x) (* x a b)))
+        f)
+; expect g
+((g 200) 7)
 ; expect 728
 
 

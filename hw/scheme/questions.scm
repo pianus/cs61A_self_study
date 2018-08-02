@@ -15,15 +15,29 @@
 ;; Returns a list of two-element lists
 (define (enumerate s)
   ; BEGIN PROBLEM 17
-  'replace-this-line
-  )
+  (define (helper s k)
+          (if (null? s)
+              nil
+              (cons (cons k (cons (car s) nil)) (helper (cdr s) (+ k 1))))
+          )
+  (helper s 0))
   ; END PROBLEM 17
 
 ;; Problem 18
 ;; List all ways to make change for TOTAL with DENOMS
 (define (list-change total denoms)
   ; BEGIN PROBLEM 18
-  'replace-this-line
+  (define (cons-all first rest)
+          (map (lambda x (cons first (car x))) rest))
+  (define (all-denoms total denoms)
+          (if (or (null? denoms) (< total 0))
+              nil
+              (begin (define denom (car denoms))
+                     (define rest (cdr denoms))
+                     (cond ((> total denom) (append (cons-all denom (all-denoms (- total denom) denoms)) (all-denoms total rest) ))
+                           ((eq? total denom) (cons (cons denom nil) (all-denoms total rest)))
+                           ((< total denom) (all-denoms total rest))))))
+  (all-denoms total denoms)
   )
   ; END PROBLEM 18
 
