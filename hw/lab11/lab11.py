@@ -14,7 +14,8 @@ def scale(s, k):
     >>> [next(m) for _ in range(5)]
     [2, 4, 6, 8, 10]
     """
-    "*** YOUR CODE HERE ***"
+    for i in s:
+        yield i*k
 
 # Q2
 def trap(s, k):
@@ -38,7 +39,10 @@ def trap(s, k):
     >>> next(t2)
     ValueError
     """
-    "*** YOUR CODE HERE ***"
+    for i in range(len(s)):
+        if i >= k:
+            raise ValueError
+        yield(s[i])
 
 # the naturals generator is used for testing scale and merge functions
 def naturals():
