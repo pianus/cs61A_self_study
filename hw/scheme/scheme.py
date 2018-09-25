@@ -18,7 +18,7 @@ def scheme_eval(expr, env, _=None): # Optional third argument is ignored
     4
     """
     # Evaluate atoms
-    print('count')
+    #print('count')
     if scheme_symbolp(expr):
         return env.lookup(expr)
     elif self_evaluating(expr):

@@ -1,14 +1,36 @@
 (define (find s predicate)
-  'YOUR-CODE-HERE
+  (cond ((null? s) #f)
+        ((pair? s) (if (predicate (car s))
+                       (car s)
+                       (find (cdr-stream s) predicate)))
+        (else (if (predicate s) s #f)))
 )
 
 (define (scale-stream s k)
-  'YOUR-CODE-HERE
+  (cond ((null? s) nil)
+        ((atom? s) (* s k))
+        ((pair? s) (cons-stream (* (car s) k) (scale-stream (cdr-stream s) k))))
 )
 
 (define (has-cycle s)
-  'YOUR-CODE-HERE
+  (define (in s seen)
+    (cond ((null? seen) #f)
+          ((eq? s (car seen)) #t)
+          (else (in s (cdr seen)))))
+  (define (helper s seen)
+    (cond ((null? s) #f)
+          (else (if (in s seen)
+                    #t
+                    (helper (cdr-stream s) (cons s seen))))))
+  (helper s nil)
 )
+
 (define (has-cycle-constant s)
-  'YOUR-CODE-HERE
+  (let ((slow s)
+        (fast (cdr-stream s)))
+       (cycle-stepper slow fast))
 )
+(define (cycle-stepper slow fast)
+        (cond ((or (null? fast) (null? (cdr-stream fast))) #f)
+              ((eq? fast slow) #t)
+              (else (cycle-stepper (cdr-stream slow) (cdr-stream (cdr-stream fast))))))
