@@ -3,12 +3,20 @@
 
 -- Q2
 CREATE TABLE obedience AS
-  SELECT "REPLACE THIS LINE WITH YOUR SOLUTION";
+  SELECT seven, denero
+  FROM students;
 
 -- Q3
 CREATE TABLE smallest_int AS
-  SELECT "REPLACE THIS LINE WITH YOUR SOLUTION";
+  SELECT time, smallest
+  FROM students
+  WHERE smallest > 15
+  ORDER BY smallest
+  LIMIT 20;
 
 -- Q4
 CREATE TABLE matchmaker AS
-  SELECT "REPLACE THIS LINE WITH YOUR SOLUTION";
+  SELECT a.pet, a.song, a.color, b.color
+  FROM students as a, students as b
+  WHERE a.pet = b.pet and a.song = b.song and a.time < b.time
+  ORDER BY a.time;
