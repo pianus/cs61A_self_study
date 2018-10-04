@@ -19,4 +19,10 @@ def permutations(lst):
     if not lst:
         yield []
         return
-    "*** YOUR CODE HERE ***"
+    if len(lst) == 1:
+        yield [lst[0]]
+    else:
+        for i in range(len(lst)):
+            for j in list(permutations(lst[:i] + lst[i+1:])):
+                print(j)
+                yield [lst[i]] + j
