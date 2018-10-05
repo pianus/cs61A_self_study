@@ -24,5 +24,4 @@ def permutations(lst):
     else:
         for i in range(len(lst)):
             for j in list(permutations(lst[:i] + lst[i+1:])):
-                print(j)
                 yield [lst[i]] + j
