@@ -45,4 +45,4 @@ def make_generators_generator(g):
             yield j
     for i in list(g()):
         lst.append(i)
-        yield list(sub_generator(lst))
+        yield sub_generator(lst)
