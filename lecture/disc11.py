@@ -80,9 +80,7 @@ def repeated(f):
     >>> [g(1) for _, g in zip(range(5), repeated(lambda x: 2 * x))]
     [1, 2, 4, 8, 16]
     """
-    def fung(f):
-        return lambda x: f(f(x))
-    yield lambda x: x
+    g =
     while True:
         yield f
         f = fung(f)

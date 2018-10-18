@@ -600,7 +600,7 @@ def optimize_tail_calls(original_scheme_eval):
         result = Thunk(expr, env)
         # BEGIN
         "*** YOUR CODE HERE ***"
-        optimized_eval(expr, env, True)
+
         # END
     return optimized_eval
 

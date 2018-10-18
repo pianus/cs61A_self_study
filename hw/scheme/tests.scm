@@ -133,6 +133,8 @@ a
 ((g 200) 7)
 ; expect 728
 
+;;;define-macro
+
 
 ; END PROBLEM 0
 

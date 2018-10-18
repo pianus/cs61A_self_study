@@ -1,0 +1,55 @@
+(define (prefix s n)
+  (if (or (null? s) (= n 0))
+      nil
+      (cons (car s) (prefix (cdr-stream s) (- n 1)))))
+
+(define ones (cons-stream 1 ones))
+(define (naturals n) (cons-stream n (naturals (+ n 1))))
+
+(define (cadr s) (car (cdr s)))
+(define (cddr s) (cdr (cdr s)))
+(define (caar s) (car (car s)))
+(define (caddr s) (car (cdr (cdr s))))
+
+(define (map-stream f s)
+  (if (null? s)
+      nil
+      (cons-stream (f car s)
+                   (map-stream f (cdr-stream s)))))
+
+(define (filter-stream f s)
+  (if (null? s)
+      nil
+      (if (f (car s))
+          (cons-stream (car s)
+                       (filter-stream f (cdr-stream s)))
+          (filter-stream f (cdr-stream s)))))
+
+(define (reduce-stream f s start)
+  (if (null? s)
+      start
+      (reduce-stream f
+                     (cdr-stream s)
+                     (f start (car s)))))
+;;; test stream
+(define (even-space-stream start increment end)
+  (if (> start end)
+      nil
+      (cons-stream start (even-space-stream (+ start increment) increment end))))
+
+(define one-to-ten
+  (even-space-stream 1 1 10)
+  )
+
+;;; Implement the Scheme procedure cycle, which takes in a list
+;;; lst and a positive integer n and returns a Stream containing
+;;; all the elements in lst repeated n times, with the feature of
+;;; that the end of the stream points back to the beginning
+;;; (therefore creating a cycle).
+(define (cycle lst n)
+  (define (cycleone lst2)
+          (cond ((and (null? lst2) (= n 0)) s)
+                ((null? lst2) (cycle lst (- n 1)))
+                (else (cons-stream (car lst2) (cycleone (cdr-stream lst2))))))
+  (define s (cycleone lst))
+  s)
