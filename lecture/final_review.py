@@ -97,5 +97,78 @@ def mystery(a):
     def mystery2(b):
         for i in range(a) :
             yield (i+1) % b
-    for j in  :
-        yield
+    for j in range(a) :
+        yield mystery2(j+1)
+
+class TreeNode:
+    def __init__(self, val, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+class BTreeIter:
+    def __init__(self, in_tree):
+        self.tree = in_tree
+        self.gen = self.tree_gen()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.tree is None:
+            raise StopIteration
+        else:
+            return next(self.gen)
+
+    def tree_gen(self):
+        yield from BTreeIter(self.tree.left)
+        yield self.tree.val
+        yield from BTreeIter(self.tree.right)
+
+def matchmaker(m,w,H):
+    if len(m) == 1:
+        return H(m[0],w[0])
+    else:
+        firstman, rest = m[0], m[1:]
+        allmatches = [H(firstman, woman) + matchmaker(rest,[ww for ww in w if ww is not woman] ) for woman in w]
+        return max(allmatches)
+
+def sorted_iter(sorted_lists):
+	while sorted_lists:
+		smallest = min(sorted_lists, key = lambda x: x[0])
+		yield smallest.pop(0)
+		sorted_lists = [lst for lst in sorted_lists if lst]
+
+def nest_iter(nested_list):
+    for i in nested_list:
+        if not isinstance(i, list):
+            yield i
+        else:
+            yield from nested_list(i)
+
+def nth_layer(t,d):
+    if d == 1:
+        yield t.label
+        raise StopIteration
+    elif t.is_leaf():
+        raise StopIteration
+    else:
+        for i in t.branches:
+            yield from nth_layer(i, d-1)
+
+def link_iter(lnk):
+    if lnk is Link.empty:
+        raise StopIteration
+    elif not isinstance(lnk.first, Link):
+        yield lnk.first
+    else:
+        for i in link_iter(lnk.first):
+            yield i
+    for j in link_iter(lnk.rest):
+        yield j
+
+def sandwich_iter(lst):
+    while len(lst) >= 3:
+        if lst[0] == lst[2]:
+            yield lst[1]
+        lst = lst[1:]
